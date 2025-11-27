@@ -1,3 +1,4 @@
+
 // ARCHETYPES
 export enum Archetype {
   SPACE = 'SPACE',     // Real Estate, Hotels
@@ -25,6 +26,7 @@ export interface BrandProfile {
   mission: string;
   tone: string;
   constraints: string; // Negative prompts / forbidden topics
+  assets: AssetLocker; // Added: The Physical Reality
 }
 
 export interface AssetLocker {

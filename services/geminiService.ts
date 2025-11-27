@@ -1,5 +1,6 @@
+
 import { GoogleGenAI, Type, Schema } from "@google/genai";
-import { StrategicAnalysis, GeneratedContent, GenerationRequest, Archetype } from "../types";
+import { StrategicAnalysis, GeneratedContent, GenerationRequest, Archetype, VisualPreset } from "../types";
 
 // Helper to ensure API Key exists
 const getClient = () => {
@@ -9,6 +10,34 @@ const getClient = () => {
   }
   return new GoogleGenAI({ apiKey });
 };
+
+// --- SYSTEM 2: VISUAL RULES ENGINE ---
+const getVisualInstruction = (archetype: Archetype, preset: VisualPreset): string => {
+  const RULES: Record<string, string> = {
+    // SPACE
+    [`${Archetype.SPACE}_${VisualPreset.LISTING}`]: 
+      "Photography style: Architectural Digest. Technical: Wide angle 16mm lens, f/8, natural light, vertical lines corrected. Mood: Airy, spacious, pristine.",
+    [`${Archetype.SPACE}_${VisualPreset.AMBIANCE}`]: 
+      "Photography style: Boutique Hotel Editorial. Technical: 50mm lens, f/1.8, bokeh effect, warm evening light, focus on textures (velvet, wood).",
+    
+    // PRODUCT
+    [`${Archetype.PRODUCT}_${VisualPreset.STUDIO}`]: 
+      "Photography style: High-end Commercial. Technical: Macro lens 100mm, hard studio lighting, infinite background, sharp focus, 8k resolution.",
+    [`${Archetype.PRODUCT}_${VisualPreset.LIFESTYLE}`]: 
+      "Photography style: Social Media Influencer. Technical: 35mm lens, natural chaotic light, shallow depth of field, product placed in a living environment.",
+    
+    // SERVICE
+    [`${Archetype.SERVICE}_${VisualPreset.AUTHORITY}`]: 
+      "Photography style: Forbes Portrait. Technical: 85mm portrait lens, rim lighting, confident pose, blurred office background.",
+    [`${Archetype.SERVICE}_${VisualPreset.CRAFT}`]: 
+      "Photography style: National Geographic Workshop. Technical: Close-up on hands, motion blur on tools, high contrast, gritty texture.",
+    [`${Archetype.SERVICE}_${VisualPreset.CORPORATE}`]: 
+      "Photography style: Modern Tech Company. Technical: Wide shot, symmetry, glass and steel environment, diverse team interaction."
+  };
+
+  return RULES[`${archetype}_${preset}`] || "Photography style: Professional, high resolution, consistent lighting.";
+};
+
 
 // --- SYSTEM 2: STEP 1 - THE STRATEGIST ---
 export const generateStrategy = async (req: GenerationRequest): Promise<StrategicAnalysis> => {
@@ -71,6 +100,7 @@ export const generateFinalContent = async (
   strategy: StrategicAnalysis
 ): Promise<GeneratedContent> => {
   const ai = getClient();
+  const visualRule = getVisualInstruction(req.brand.archetype, req.preset);
 
   const systemInstruction = `
     You are a Senior Copywriter and Art Director.
@@ -78,10 +108,16 @@ export const generateFinalContent = async (
     
     STRATEGY ANGLE: ${strategy.strategicAngle}
     TONE INSTRUCTIONS: ${strategy.toneInstruction}
-    VISUAL PRESET: ${req.preset}
     
-    Your visual prompt must be highly detailed, photorealistic, and match the "Onyx Prestige" aesthetic if applicable, 
-    but strictly following the specific Visual Preset requirements for the ${req.brand.archetype}.
+    --- VISUAL DIRECTOR INSTRUCTIONS (STRICT) ---
+    You must generate an image prompt that adheres to these physics/camera rules:
+    ${visualRule}
+    
+    The image prompt should be descriptive, referencing specific lighting, lens type, and composition mentioned above.
+    
+    --- COPYWRITING INSTRUCTIONS ---
+    Adhere to the brand constraints: ${req.brand.constraints}
+    Tone: ${req.brand.tone}
   `;
 
   const prompt = `
