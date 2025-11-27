@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { StrategicAnalysis, GeneratedContent, GenerationRequest, Archetype, VisualPreset } from "../types";
 
@@ -124,7 +123,7 @@ export const generateFinalContent = async (
     Write a LinkedIn/Social post about: ${req.topic}
     Audience: ${req.targetAudience}
     
-    Also provide a detailed prompt for an image generation model (like Imagen 3) that visualizes this concept.
+    Also provide a detailed prompt for an image generation model that visualizes this concept.
   `;
 
   const responseSchema: Schema = {
@@ -159,25 +158,27 @@ export const generateFinalContent = async (
 export const generateVisual = async (imagePrompt: string): Promise<string> => {
   const ai = getClient();
   
-  // Try to use Imagen if available, or fallback to standard generation if specific model not allowed
-  // Using the requested prompt instruction for image gen
   try {
-    const response = await ai.models.generateImages({
-      model: 'imagen-3.0-generate-001',
-      prompt: imagePrompt,
-      config: {
-        numberOfImages: 1,
-        aspectRatio: '1:1',
+    // Use gemini-2.5-flash-image for general image generation
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: {
+        parts: [{ text: imagePrompt }]
       }
     });
     
-    if (response.generatedImages && response.generatedImages.length > 0) {
-        return `data:image/png;base64,${response.generatedImages[0].image.imageBytes}`;
+    if (response.candidates?.[0]?.content?.parts) {
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData) {
+          return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        }
+      }
     }
+    
     throw new Error("No image generated");
 
   } catch (error) {
-    console.warn("Imagen generation failed, falling back to placeholder logic or error handling", error);
+    console.warn("Image generation failed, falling back to placeholder", error);
     // Fallback: Use Picsum with a seed based on prompt length for consistency
     return `https://picsum.photos/seed/${imagePrompt.length}/800/800`;
   }

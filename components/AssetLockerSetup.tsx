@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Archetype, BrandProfile, AssetLocker } from '../types';
 import { GlassCard } from './ui/GlassCard';
@@ -53,9 +52,14 @@ export const AssetLockerSetup: React.FC<AssetLockerSetupProps> = ({ brand, setBr
   };
 
   const getCount = (key: keyof AssetLocker) => (brand.assets?.[key] || []).length;
+  const hasAssets = getCount(config.key1) > 0 || getCount(config.key2) > 0;
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      className="space-y-8"
+    >
       <div className="text-center space-y-2 mb-12">
         <h1 className="text-4xl font-bold text-white flex items-center justify-center gap-3">
            <Lock className="text-violet-500" /> Asset Locker
@@ -88,19 +92,19 @@ export const AssetLockerSetup: React.FC<AssetLockerSetupProps> = ({ brand, setBr
       <div className="flex justify-center pt-8">
          <button 
             onClick={onNext}
-            disabled={getCount(config.key1) === 0 && getCount(config.key2) === 0}
+            disabled={!hasAssets}
             className="px-8 py-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-violet-500/20 transition-all flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Finalize Digital Twin <ArrowRight size={20} />
           </button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
 const UploadZone = ({ label, desc, count, loading, onClick }: any) => (
-  <GlassCard className="p-8 group cursor-pointer border-dashed border-2 border-slate-700 hover:border-violet-500/50 transition-all">
-    <div className="flex flex-col items-center text-center space-y-4" onClick={onClick}>
+  <GlassCard className="p-8 group cursor-pointer border-dashed border-2 border-slate-700 hover:border-violet-500/50 transition-all h-full">
+    <div className="flex flex-col items-center text-center space-y-4 h-full" onClick={onClick}>
       <div className={`
         w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500
         ${count > 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500 group-hover:text-violet-400 group-hover:scale-110'}
@@ -113,7 +117,7 @@ const UploadZone = ({ label, desc, count, loading, onClick }: any) => (
         <p className="text-sm text-slate-400">{desc}</p>
       </div>
 
-      <div className="pt-4 w-full">
+      <div className="pt-4 w-full flex-1 flex flex-col justify-end">
         {count > 0 ? (
           <div className="grid grid-cols-4 gap-2">
             {[...Array(count)].map((_, i) => (
